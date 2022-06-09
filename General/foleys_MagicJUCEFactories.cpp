@@ -688,14 +688,14 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XYDraggerItem)
 };
-const juce::Identifier  XYDraggerItemJOS::pCrosshair       { "xy-crosshair" };
-const juce::StringArray XYDraggerItemJOS::pCrosshairTypes  { "no-crosshair", "vertical", "horizontal", "crosshair" };
-const juce::Identifier  XYDraggerItemJOS::pDotType         { "xy-dot" };
-const juce::StringArray XYDraggerItemJOS::pDotTypes        { "xy-dot", "xy-pole", "xy-zero", "xy-pole-zero" };
-const juce::Identifier  XYDraggerItemJOS::pRadius          { "xy-radius" };
-const juce::Identifier  XYDraggerItemJOS::pLineThickness   { "xy-line-thickness" };
-const juce::Identifier  XYDraggerItemJOS::pSenseFactor     { "xy-sense-factor" };
-const juce::Identifier  XYDraggerItemJOS::pJumpToClick     { "xy-jump-to-click" };
+const juce::Identifier  XYDraggerItem::pCrosshair       { "xy-crosshair" };
+const juce::StringArray XYDraggerItem::pCrosshairTypes  { "no-crosshair", "vertical", "horizontal", "crosshair" };
+const juce::Identifier  XYDraggerItem::pDotType         { "xy-dot" };
+const juce::StringArray XYDraggerItem::pDotTypes        { "xy-dot", "xy-pole", "xy-zero", "xy-pole-zero" };
+const juce::Identifier  XYDraggerItem::pRadius          { "xy-radius" };
+const juce::Identifier  XYDraggerItem::pLineThickness   { "xy-line-thickness" };
+const juce::Identifier  XYDraggerItem::pSenseFactor     { "xy-sense-factor" };
+const juce::Identifier  XYDraggerItem::pJumpToClick     { "xy-jump-to-click" };
 
 //==============================================================================
 
