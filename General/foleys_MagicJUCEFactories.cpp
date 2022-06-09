@@ -576,7 +576,10 @@ public:
 
     static const juce::Identifier  pCrosshair;
     static const juce::StringArray pCrosshairTypes;
+    static const juce::Identifier  pDotType;
+    static const juce::StringArray pDotTypes;
     static const juce::Identifier  pRadius;
+    static const juce::Identifier  pLineThickness;
     static const juce::Identifier  pSenseFactor;
     static const juce::Identifier  pJumpToClick;
 
@@ -625,9 +628,29 @@ public:
         else
             dragger.setCrossHair (true, true);
 
+        juce::String dotType = getProperty (pDotType);
+        bool matched = false;
+        for (int i=0; i<4; i++)
+        {
+            if (dotType == pDotTypes [i])
+            {
+                dragger.setDotType ((DOT_TYPE)i);
+                matched = true;
+                break;
+            }
+        }
+        if (not matched)
+        {
+            dragger.setDotType (DOT_TYPE_DOT);
+        }
+
         auto radius = getProperty (pRadius);
         if (! radius.isVoid())
             dragger.setRadius (radius);
+
+        auto lineThickness = getProperty (pLineThickness);
+        if (! lineThickness.isVoid())
+            dragger.setLineThickness (lineThickness);
 
         auto factor = getProperty (pSenseFactor);
         if (! factor.isVoid())
@@ -646,7 +669,9 @@ public:
         props.push_back ({ configNode, IDs::parameterY, SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, "right-click", SettableProperty::Choice, {}, magicBuilder.createParameterMenuLambda() });
         props.push_back ({ configNode, pCrosshair, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (pCrosshairTypes) });
+        props.push_back ({ configNode, pDotType, SettableProperty::Choice, {}, magicBuilder.createChoicesMenuLambda (pDotTypes) });
         props.push_back ({ configNode, pRadius, SettableProperty::Number, {}, {}});
+        props.push_back ({ configNode, pLineThickness, SettableProperty::Number, {}, {}});
         props.push_back ({ configNode, pSenseFactor, SettableProperty::Number, {}, {}});
         props.push_back ({ configNode, pJumpToClick, SettableProperty::Toggle, {}, {}});
 
@@ -663,11 +688,14 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XYDraggerItem)
 };
-const juce::Identifier  XYDraggerItem::pCrosshair       { "xy-crosshair" };
-const juce::StringArray XYDraggerItem::pCrosshairTypes  { "no-crosshair", "vertical", "horizontal", "crosshair" };
-const juce::Identifier  XYDraggerItem::pRadius          { "xy-radius" };
-const juce::Identifier  XYDraggerItem::pSenseFactor     { "xy-sense-factor" };
-const juce::Identifier  XYDraggerItem::pJumpToClick     { "xy-jump-to-click" };
+const juce::Identifier  XYDraggerItemJOS::pCrosshair       { "xy-crosshair" };
+const juce::StringArray XYDraggerItemJOS::pCrosshairTypes  { "no-crosshair", "vertical", "horizontal", "crosshair" };
+const juce::Identifier  XYDraggerItemJOS::pDotType         { "xy-dot" };
+const juce::StringArray XYDraggerItemJOS::pDotTypes        { "xy-dot", "xy-pole", "xy-zero", "xy-pole-zero" };
+const juce::Identifier  XYDraggerItemJOS::pRadius          { "xy-radius" };
+const juce::Identifier  XYDraggerItemJOS::pLineThickness   { "xy-line-thickness" };
+const juce::Identifier  XYDraggerItemJOS::pSenseFactor     { "xy-sense-factor" };
+const juce::Identifier  XYDraggerItemJOS::pJumpToClick     { "xy-jump-to-click" };
 
 //==============================================================================
 
