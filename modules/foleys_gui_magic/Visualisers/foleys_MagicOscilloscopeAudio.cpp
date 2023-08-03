@@ -110,8 +110,8 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
   }
 
   // juce::AudioBuffer<float>* bufferP = &buffer;
-  int firstAudibleSample[numChannelsIn];
-  int lastAudibleSample[numChannelsIn];
+  std::vector<int> firstAudibleSample (numChannelsIn);
+  std::vector<int> lastAudibleSample (numChannelsIn);
   int startSample = 0;
   int numSamplesTrimmed = numSamples;
   if (latch) { // When latching, we don't push samples when they are inaudible (least-work method)
@@ -131,7 +131,7 @@ void MagicOscilloscopeAudio::pushSamples (const juce::AudioBuffer<float>& buffer
         }
       }
     }
-    if (not audible)
+    if (! audible)
       return;
     for (int c=firstChannelToPlot; c<=lastChannelToPlot; c++) {
       lastAudibleSample[c] = firstAudibleSample[c];
@@ -270,7 +270,7 @@ void MagicOscilloscopeAudio::createPlotPaths (juce::Path& path, juce::Path& fill
             pos -= numPlotSamplesAvailable;
 
         static bool sawNonzero = false;
-        if (not sawNonzero && data[pos] != 0.0f)
+        if (! sawNonzero && data[pos] != 0.0f)
         {
             sawNonzero = true;
             DBG("MagicOscilloscopeAudio::createPlotPaths: First nonzero sample to plot is " << data[pos]);
