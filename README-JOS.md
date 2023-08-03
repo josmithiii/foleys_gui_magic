@@ -9,3 +9,4 @@ scatter-plot-for-main   - ALL JOS plot stuff for PGM (must finish)
 scatter-plot	        - Potentially just the scatter-plot, if I can wean it to
                           use MagicPlotComponent instead of MagicAudioPlotComponent
                           (considering this if finishing scatter-plot-for-main is just too much)
+midi-display            - Simple GuiItem for displaying latest MIDI (like what Logic displays)
