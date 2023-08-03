@@ -39,55 +39,47 @@ namespace foleys
 class MagicAudioPlotComponent;
 
 /**
- This class collects two buffers of samples in a circular buffer and
- allows the GUI to draw them in the style of an scatterplot, or
- XY-plot.  For example, sin(t) and cos(t) produce a circle.
+ This class collects your samples in a circular buffer and allows the GUI to
+ draw it in the style of an oscilloscope
  */
-class MagicScatterPlot : public MagicAudioPlotSource
+class MagicOscilloscopeAudio : public MagicAudioPlotSource
 {
 public:
 
     /**
-     Create an XY ScatterPlot adapter to push samples into for later display in the GUI.
+     Create an oscilloscope adapter to push samples into for later display in the GUI.
+
+     @param channel lets you select the channel to analyse. -1 means summing all together (the default)
      */
-    MagicScatterPlot () : MagicAudioPlotSource() {}
+    MagicOscilloscopeAudio (int channelToDisplay=-1);
+
+    static void checkAudioBufferForNaNs (juce::AudioBuffer<float>& buffer);
 
     /**
-     Push samples to a buffer to be visualised as a scatterplot (XY plot) of channels 0 (X) and 1 (Y).
+     Push samples of an AudioBuffer to be visualised.
      */
-    void pushSamples (const juce::AudioBuffer<float>& buffer, int currentPlotLength) override;
-
-    /**
-     Push samples to a buffer to be visualised as a scatterplot (XY plot).
-
-      @param bufferX is plotted as the X-axis coordinate.
-      @param bufferY is plotted as the Y-axis coordinate.
-      @param plotLength, if positive, gives the preferred length of
-             the next plot in samples (e.g., one period).
-             Otherwise, 10 ms of samples is plotted.
-     */
-    void pushSamples (const juce::AudioBuffer<float>& bufferX, int channelX,
-                      const juce::AudioBuffer<float>& bufferY, int channelY,
-                      const int plotLengthOverride=0) override;
+    void pushSamples (const juce::AudioBuffer<float>& buffer, int plotLength=0) override;
+    void pushSamples (const std::shared_ptr<juce::AudioBuffer<float>> bufSP, int channelToPlot=0,
+                      int numChannelsToPlot=1, int plotLength=0) override;
+    void pushSamples (const juce::AudioBuffer<float>& bufR, int channelToPlot,
+                      int numChannelsToPlot, int plotLength=0) override;
 
     /**
      This is the callback that creates the frequency plot for drawing.
 
-      @param path is the path instance that is constructed by the MagicPlotSource
-      @param filledPath is the path instance that is constructed by the MagicPlotSource to be filled
+      @param path is the path instance that is constructed by the MagicAudioPlotSource
+      @param filledPath is the path instance that is constructed by the MagicAudioPlotSource to be filled
       @param bounds the bounds of the plot
       @param component grants access to the plot component, e.g. to find the colours from it
       */
-    virtual void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) override;
+    void createPlotPaths (juce::Path& path, juce::Path& filledPath, juce::Rectangle<float> bounds, MagicAudioPlotComponent& component) override;
 
-    virtual void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
+    void prepareToPlay (double sampleRate, int samplesPerBlockExpected) override;
 
 private:
+    int numChannelsOut = 0; // == numChannelsIn or 1 when channels are averaged
 
-    juce::AudioBuffer<float> samplesX;
-    juce::AudioBuffer<float> samplesY;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicScatterPlot)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MagicOscilloscopeAudio)
 };
 
 } // namespace foleys
