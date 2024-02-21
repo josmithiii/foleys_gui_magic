@@ -68,7 +68,8 @@ public:
 
 private:
 
-    void buttonClicked (juce::Button *) override;
+    void buttonClicked (juce::Button *) override {}
+    void buttonStateChanged (juce::Button *) override;
     void parameterValueChanged (int parameterIndex, float newValue) override;
     void parameterGestureChanged (int /*parameterIndex*/, bool /*gestureIsStarting*/) override {}
 

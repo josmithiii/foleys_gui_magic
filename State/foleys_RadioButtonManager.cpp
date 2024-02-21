@@ -74,8 +74,11 @@ void RadioButtonHandler::setRadioGroupValue (juce::var value, juce::RangedAudioP
     }
 }
 
-void RadioButtonHandler::buttonClicked (juce::Button* clickedButton)
+void RadioButtonHandler::buttonStateChanged (juce::Button* clickedButton)
 {
+    if (!clickedButton->getToggleState())
+        return;
+
     if (parameter)
     {
         auto value = parameter->convertTo0to1 (radioButtonValue);
