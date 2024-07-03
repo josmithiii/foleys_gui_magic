@@ -56,7 +56,7 @@ class MagicGUIBuilder
 {
 public:
     MagicGUIBuilder (MagicGUIState& magicStateToUse);
-    ~MagicGUIBuilder() override;
+    virtual ~MagicGUIBuilder() override;
 
     /**
      Create a node from the description
@@ -227,6 +227,8 @@ public:
 
         /** This is called when the user drops an item in edit node */
         virtual void guiItemDropped (const juce::ValueTree& node, juce::ValueTree& droppedOnto) = 0;
+
+      virtual ~Listener() {};
     };
 
     void addListener (Listener* listener) { listeners.add (listener); }
