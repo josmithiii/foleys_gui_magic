@@ -58,7 +58,7 @@ std::unique_ptr<juce::AudioProcessorParameterGroup> createParametersForFilter (c
 
     auto freqParameter = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (prefix + IDs::paramFreq, 1),
                                                                       name + ": " + TRANS ("Frequency"),
-                                                                      foleys::Conversions::makeLogarithmicRange<float>(20.0f, 20000.0f),
+                                                                      foleys::Conversions::makeLogarithmicRange<float>(20.0f, 12000.0f), /* half of LOWEST sampleRate */
                                                                       frequency,
                                                                       juce::String(),
                                                                       juce::AudioProcessorParameter::genericParameter,
@@ -106,7 +106,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     params.push_back (createParametersForFilter ("Q3", NEEDS_TRANS ("Q3"), EqualizerExampleAudioProcessor::Peak,        500.0f));
     params.push_back (createParametersForFilter ("Q4", NEEDS_TRANS ("Q4"), EqualizerExampleAudioProcessor::Peak,       1000.0f));
     params.push_back (createParametersForFilter ("Q5", NEEDS_TRANS ("Q5"), EqualizerExampleAudioProcessor::HighShelf,  5000.0f));
-    params.push_back (createParametersForFilter ("Q6", NEEDS_TRANS ("Q6"), EqualizerExampleAudioProcessor::LowPass,   12000.0f));
+    params.push_back (createParametersForFilter ("Q6", NEEDS_TRANS ("Q6"), EqualizerExampleAudioProcessor::LowPass,   10000.0f));
 
     auto param = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (IDs::paramOutput, 1),
                                                               TRANS ("Output"),
