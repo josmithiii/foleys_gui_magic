@@ -38,11 +38,14 @@
 namespace foleys
 {
 
+static const double NUM_FREQS { 300 };
+
 MagicFilterPlot::MagicFilterPlot()
 {
-    frequencies.resize (300);
+    frequencies.resize (NUM_FREQS);
+
     for (size_t i = 0; i < frequencies.size(); ++i)
-        frequencies [i] = 20.0 * std::pow (2.0, i / 30.0);
+      frequencies [i] = 0.5 * double(i) / frequencies.size(); // normalized Hz until sampleRate becomes available
 
     magnitudes.resize (frequencies.size());
 }
@@ -111,6 +114,15 @@ void MagicFilterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath,
 void MagicFilterPlot::prepareToPlay (double sampleRateToUse, int)
 {
     sampleRate = sampleRateToUse;
+
+    auto freqRatio = std::pow(2.0, (std::log2(0.9999 * sampleRate/2.0) - std::log2(20.0))/double(NUM_FREQS-1));
+    double freq = 20.0;
+    for (size_t i = 0; i < frequencies.size(); ++i)
+    {
+      jassert(freq < sampleRate/2.0);
+      frequencies [i] = freq;
+      freq *= freqRatio;
+    }
 }
 
 } // namespace foleys
