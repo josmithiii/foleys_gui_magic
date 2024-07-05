@@ -45,15 +45,15 @@ namespace Conversions
         return juce::NormalisableRange<FloatType>
         (
             min, max,
-            [](FloatType start, FloatType end, FloatType normalised)
+            [](FloatType start, FloatType end, FloatType normalised) // convert from 0-to-1
             {
                 return start + (std::pow (FloatType (2), normalised * FloatType (10)) - FloatType (1)) * (end - start) / FloatType (1023);
             },
-            [](FloatType start, FloatType end, FloatType value)
+            [](FloatType start, FloatType end, FloatType value)   // convert to 0-to-1
             {
                 return (std::log (((value - start) * FloatType (1023) / (end - start)) + FloatType (1)) / std::log (FloatType (2))) / FloatType (10);
             },
-            [](FloatType start, FloatType end, FloatType value)
+            [](FloatType start, FloatType end, FloatType value)   // snap to legal value
             {
                 // optimised for frequencies: >3 kHz: 2 decimals
                 if (value > FloatType (3000))
