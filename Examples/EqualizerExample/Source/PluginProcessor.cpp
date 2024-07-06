@@ -12,6 +12,7 @@
 
 namespace IDs
 {
+    static juce::String paramInput   { "input" };
     static juce::String paramOutput  { "output" };
     static juce::String paramType    { "type" };
     static juce::String paramFreq    { "freq" };
@@ -108,7 +109,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     params.push_back (createParametersForFilter ("Q5", NEEDS_TRANS ("Q5"), EqualizerExampleAudioProcessor::HighShelf,  5000.0f));
     params.push_back (createParametersForFilter ("Q6", NEEDS_TRANS ("Q6"), EqualizerExampleAudioProcessor::LowPass,   10000.0f));
 
-    auto param = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (IDs::paramOutput, 1),
+    auto paramIn = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (IDs::paramInput, 1),
+                                                              TRANS ("Input"),
+                                                              juce::NormalisableRange<float> (0.0f, 2.0f, 0.01f), 1.0f,
+                                                              juce::String(),
+                                                              juce::AudioProcessorParameter::genericParameter,
+                                                              [](float value, int) {return juce::String (juce::Decibels::gainToDecibels(value), 1) + " dB";},
+                                                              [](juce::String text) {return juce::Decibels::decibelsToGain (text.getFloatValue());});
+
+    auto paramOut = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (IDs::paramOutput, 1),
                                                               TRANS ("Output"),
                                                               juce::NormalisableRange<float> (0.0f, 2.0f, 0.01f), 1.0f,
                                                               juce::String(),
@@ -116,7 +125,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
                                                               [](float value, int) {return juce::String (juce::Decibels::gainToDecibels(value), 1) + " dB";},
                                                               [](juce::String text) {return juce::Decibels::decibelsToGain (text.getFloatValue());});
 
-    auto group = std::make_unique<juce::AudioProcessorParameterGroup> ("global", TRANS ("Globals"), "|", std::move (param));
+    auto group = std::make_unique<juce::AudioProcessorParameterGroup> ("global", TRANS ("Globals"), "|", std::move (paramIn), std::move (paramOut));
     params.push_back (std::move (group));
 
     return { params.begin(), params.end() };
@@ -289,33 +298,50 @@ EqualizerExampleAudioProcessor::FilterAttachment::FilterAttachment (juce::AudioP
 void EqualizerExampleAudioProcessor::FilterAttachment::updateFilter()
 {
     if (sampleRate < 20.0)
-        return;
+      return; // prepareToPlay() not yet called
+  
+    changed = true; // it turns out updateFilter() is only called when something changes
 
-    switch (type)
-    {
+    if (gain.load() != lastGain) {
+      switch (type) {
+      case LowShelf:    coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gain.load())); break;
+      case Peak:        coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gain.load())); break;
+      case HighShelf:   coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gain.load())); break;
+      default:
+        std::cerr << "*** EqualizerExample/PluginProcessor.cpp: gain changed for filter type that does not support it\n";
+        return;
+      }
+      lastGain = gain.load();
+    } else if (type.load() != lastType || frequency.load() != lastFrequency || quality.load() != lastQuality) {
+      switch (type) {
         case NoFilter:    coefficients = new juce::dsp::IIR::Coefficients<float> (1, 0, 1, 0); break;
         case LowPass:     coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass (sampleRate, frequency, quality); break;
-        case LowPass1st:  coefficients = juce::dsp::IIR::Coefficients<float>::makeFirstOrderLowPass (sampleRate, frequency); break;
+        case LowPass1st:  coefficients = juce::dsp::IIR::Coefficients<float>::makeFirstOrderLowPass (sampleRate, frequency); break; // no quality
         case LowShelf:    coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gain.load())); break;
         case BandPass:    coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sampleRate, frequency, quality); break;
         case Notch:       coefficients = juce::dsp::IIR::Coefficients<float>::makeNotch (sampleRate, frequency, quality); break;
         case Peak:        coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gain.load())); break;
         case HighShelf:   coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gain.load())); break;
-        case HighPass1st: coefficients = juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass (sampleRate, frequency); break;
+        case HighPass1st: coefficients = juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass (sampleRate, frequency); break; // no quality
         case HighPass:    coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sampleRate, frequency, quality); break;
         case LastFilterID:
-        default:          return;
-    }
-
-    {
+        default: return;
+      }
+      lastType = type.load();
+      lastFrequency = frequency.load();
+      lastQuality = quality.load();
+      {
         juce::ScopedLock processLock (callbackLock);
         // changed = different(filter.state, coefficients);
-        changed = true;
         *filter.state = *coefficients;
-    }
+      }
 
-    if (postFilterUpdate)
+      if (postFilterUpdate)
         postFilterUpdate (*this);
+
+    } else {
+      std::cerr << "*** EqualizerExample/PluginProcessor.cpp: updateFilter called when nothing changed\n";
+    }
 }
 
 void EqualizerExampleAudioProcessor::FilterAttachment::setSampleRate (double sampleRateToUse)

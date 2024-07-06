@@ -83,7 +83,7 @@ public:
 
         std::function<void(FilterAttachment&)> postFilterUpdate;
 
-          juce::dsp::IIR::Coefficients<float>::Ptr coefficients;
+        juce::dsp::IIR::Coefficients<float>::Ptr coefficients;
         double                                   sampleRate = 0.0;
 
     private:
@@ -100,6 +100,10 @@ public:
         std::atomic<float>  quality    { 1.0f };
         std::atomic<bool>   active     { true };
         bool changed { true }; // plot optimization
+        FilterType lastType { NoFilter };
+        float lastFrequency { 0.0 };
+        float lastGain { -1.0 };
+        float lastQuality { 0.0 };
 
         AttachedValue<FilterType> typeAttachment;
         AttachedValue<float> frequencyAttachment;
