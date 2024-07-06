@@ -71,7 +71,7 @@ void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::P
 
     const juce::ScopedWriteLock writeLock (plotLock);
 
-    std::cout << "MagicFilterPlot:: setIIRCoefficients()\n";
+    DBG("MagicFilterPlot:: setIIRCoefficients()");
 
     maxDB = maxDBToDisplay;
     coefficients->getMagnitudeForFrequencyArray (frequencies.data(),
@@ -116,7 +116,7 @@ void MagicFilterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath,
     const auto yFactor = 2.0f * bounds.getHeight() / juce::Decibels::decibelsToGain (maxDB);
     const auto xFactor = static_cast<double> (bounds.getWidth()) / frequencies.size();
 
-    std::cout << "MagicFilterPlot:: createPlotPaths() for filter " << getName() << "\n";
+    DBG("MagicFilterPlot:: createPlotPaths() for filter " << getName());
 
     path.clear();
     path.startNewSubPath (bounds.getX(), float (magnitudes [0] > 0 ? bounds.getCentreY() - yFactor * std::log (magnitudes [0]) / std::log (2) : bounds.getBottom()));
@@ -124,10 +124,14 @@ void MagicFilterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath,
         path.lineTo (float (bounds.getX() + i * xFactor),
                      float (magnitudes [i] > 0 ? bounds.getCentreY() - yFactor * std::log (magnitudes [i]) / std::log (2) : bounds.getBottom()));
 
+#if 1
+    filledPath.clear(); // need for speed
+#else
     filledPath = path;
     filledPath.lineTo (bounds.getBottomRight());
     filledPath.lineTo (bounds.getBottomLeft());
     filledPath.closeSubPath();
+#endif
 }
 
 void MagicFilterPlot::prepareToPlay (double sampleRateToUse, int)
