@@ -46,7 +46,7 @@ namespace Conversions
         (
             min, max,
             [](FloatType start, FloatType end, FloatType normalised) // convert from 0-to-1
-            {
+            {   // Log unmaps as 2^(0:10p:10)-1 = [0:1023]
                 return start + (std::pow (FloatType (2), normalised * FloatType (10)) - FloatType (1)) * (end - start) / FloatType (1023);
             },
             [](FloatType start, FloatType end, FloatType value)   // convert to 0-to-1

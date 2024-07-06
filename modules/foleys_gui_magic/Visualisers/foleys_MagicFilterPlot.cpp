@@ -38,17 +38,29 @@
 namespace foleys
 {
 
-static const double NUM_FREQS { 300 };
+static const int NUM_FREQS { 300 };
 
-MagicFilterPlot::MagicFilterPlot()
+static void initFrequencies(std::vector<double>& freqs, double freqMin, double freqMax)
+{
+  unsigned long numFreqs = freqs.size();
+  double freqRatio = std::pow( 2.0, ( std::log2(freqMax) - std::log2(freqMin) ) / double(numFreqs) );
+  double freq = freqMin;
+  for (size_t i = 0; i < numFreqs-1; ++i)
+    {
+      freqs [i] = freq;
+      freq *= freqRatio;
+    }
+  freqs[numFreqs-1] = freqMax; // avoid roundoff error
+}    
+
+MagicFilterPlot::MagicFilterPlot(double minFreqHz, double maxFreqHz)
 {
     frequencies.resize (NUM_FREQS);
-
-    for (size_t i = 0; i < frequencies.size(); ++i)
-      frequencies [i] = 0.5 * double(i) / frequencies.size(); // normalized Hz until sampleRate becomes available
-
+    initFrequencies(frequencies, minFreqHz, maxFreqHz);
     magnitudes.resize (frequencies.size());
 }
+
+MagicFilterPlot::MagicFilterPlot() : MagicFilterPlot(20.0, 20000.0) {}
 
 void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::Ptr coefficients, float maxDBToDisplay)
 {
@@ -62,7 +74,6 @@ void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::P
                                                  magnitudes.data(),
                                                  frequencies.size(),
                                                  sampleRate);
-
     resetLastDataFlag();
 }
 
@@ -113,16 +124,9 @@ void MagicFilterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath,
 
 void MagicFilterPlot::prepareToPlay (double sampleRateToUse, int)
 {
-    sampleRate = sampleRateToUse;
-
-    auto freqRatio = std::pow(2.0, (std::log2(0.9999 * sampleRate/2.0) - std::log2(20.0))/double(NUM_FREQS-1));
-    double freq = 20.0;
-    for (size_t i = 0; i < frequencies.size(); ++i)
-    {
-      jassert(freq < sampleRate/2.0);
-      frequencies [i] = freq;
-      freq *= freqRatio;
-    }
+  sampleRate = sampleRateToUse;
+  if (sampleRate/2.0 < 20000.0)
+    initFrequencies( frequencies, 20.0, sampleRate/2.0 );
 }
 
 } // namespace foleys

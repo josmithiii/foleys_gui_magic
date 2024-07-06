@@ -58,7 +58,7 @@ std::unique_ptr<juce::AudioProcessorParameterGroup> createParametersForFilter (c
 
     auto freqParameter = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (prefix + IDs::paramFreq, 1),
                                                                       name + ": " + TRANS ("Frequency"),
-                                                                      foleys::Conversions::makeLogarithmicRange<float>(20.0f, 12000.0f), /* half of LOWEST sampleRate */
+                                                                      foleys::Conversions::makeLogarithmicRange<float>(20.0f, 20000.0f),
                                                                       frequency,
                                                                       juce::String(),
                                                                       juce::AudioProcessorParameter::genericParameter,
@@ -124,12 +124,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
 
 auto createPostUpdateLambda (foleys::MagicProcessorState& magicState, const juce::String& plotID)
 {
-    return [plot = magicState.getObjectWithType<foleys::MagicFilterPlot>(plotID)] (const EqualizerExampleAudioProcessor::FilterAttachment& a)
+    return [plot = magicState.getObjectWithType<foleys::MagicFilterPlot>(plotID)] (EqualizerExampleAudioProcessor::FilterAttachment& a)
     {
         if (plot != nullptr)
         {
+          if (a.isChanged() /* && a.isActive() */)
+          {
             plot->setIIRCoefficients (a.coefficients, maxLevel);
             plot->setActive (a.isActive());
+            a.setChanged(false);
+          }
         }
     };
 }
@@ -305,6 +309,8 @@ void EqualizerExampleAudioProcessor::FilterAttachment::updateFilter()
 
     {
         juce::ScopedLock processLock (callbackLock);
+        // changed = different(filter.state, coefficients);
+        changed = true;
         *filter.state = *coefficients;
     }
 

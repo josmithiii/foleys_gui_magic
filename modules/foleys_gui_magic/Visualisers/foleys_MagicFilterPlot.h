@@ -49,6 +49,8 @@ public:
 
     MagicFilterPlot();
 
+    MagicFilterPlot(double minFreqHz, double maxFreqHz);
+
     /**
      Set new coefficients to calculate the frequency response from.
 
