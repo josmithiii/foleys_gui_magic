@@ -139,7 +139,7 @@ auto createPostUpdateLambda (foleys::MagicProcessorState& magicState, const juce
         {
           if (a.isChanged() /* && a.isActive() */)
           {
-            plot->setIIRCoefficients (a.coefficients, maxLevel);
+            plot->setIIRCoefficients (a.coefficients, maxLevel, a.getTypeName());
             plot->setActive (a.isActive());
             a.setChanged(false);
           }
@@ -424,7 +424,7 @@ void EqualizerExampleAudioProcessor::handleAsyncUpdate()
         if (a->isActive())
             coefficients.push_back (a->coefficients);
 
-    plotSum->setIIRCoefficients (gain, coefficients, maxLevel);
+    plotSum->setIIRCoefficients (gain, coefficients, maxLevel, "OverallFilter");
 }
 
 //==============================================================================

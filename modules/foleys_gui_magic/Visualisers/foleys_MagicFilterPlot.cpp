@@ -62,12 +62,16 @@ MagicFilterPlot::MagicFilterPlot(double minFreqHz, double maxFreqHz)
 
 MagicFilterPlot::MagicFilterPlot() : MagicFilterPlot(20.0, 20000.0) {}
 
-void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::Ptr coefficients, float maxDBToDisplay)
+void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::Ptr coefficients, float maxDBToDisplay, juce::String name = "Unnamed Filter")
 {
+    filterName = name;
+
     if (sampleRate < 20.0)
         return;
 
     const juce::ScopedWriteLock writeLock (plotLock);
+
+    std::cout << "MagicFilterPlot:: setIIRCoefficients()\n";
 
     maxDB = maxDBToDisplay;
     coefficients->getMagnitudeForFrequencyArray (frequencies.data(),
@@ -77,8 +81,10 @@ void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::P
     resetLastDataFlag();
 }
 
-void MagicFilterPlot::setIIRCoefficients (float gain, std::vector<juce::dsp::IIR::Coefficients<float>::Ptr> coefficients, float maxDBToDisplay)
+void MagicFilterPlot::setIIRCoefficients (float gain, std::vector<juce::dsp::IIR::Coefficients<float>::Ptr> coefficients, float maxDBToDisplay, juce::String name = "Unnamed Filter")
 {
+    filterName = name;
+
     if (sampleRate < 20.0)
         return;
 
@@ -109,6 +115,8 @@ void MagicFilterPlot::createPlotPaths (juce::Path& path, juce::Path& filledPath,
 
     const auto yFactor = 2.0f * bounds.getHeight() / juce::Decibels::decibelsToGain (maxDB);
     const auto xFactor = static_cast<double> (bounds.getWidth()) / frequencies.size();
+
+    std::cout << "MagicFilterPlot:: createPlotPaths() for filter " << getName() << "\n";
 
     path.clear();
     path.startNewSubPath (bounds.getX(), float (magnitudes [0] > 0 ? bounds.getCentreY() - yFactor * std::log (magnitudes [0]) / std::log (2) : bounds.getBottom()));

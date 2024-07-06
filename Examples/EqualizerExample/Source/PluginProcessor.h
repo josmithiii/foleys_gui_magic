@@ -86,6 +86,8 @@ public:
         juce::dsp::IIR::Coefficients<float>::Ptr coefficients;
         double                                   sampleRate = 0.0;
 
+        juce::String getTypeName() { return prefix; }
+
     private:
         void updateFilter();
 
