@@ -12,8 +12,7 @@
 
 namespace IDs
 {
-    static juce::String paramInput   { "input" };
-    static juce::String paramOutput  { "output" };
+    static juce::String paramOutLevel  { "outputLevel" };
     static juce::String paramType    { "type" };
     static juce::String paramFreq    { "freq" };
     static juce::String paramGain    { "gain" };
@@ -109,15 +108,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     params.push_back (createParametersForFilter ("Q5", NEEDS_TRANS ("Q5"), EqualizerExampleAudioProcessor::HighShelf,  5000.0f));
     params.push_back (createParametersForFilter ("Q6", NEEDS_TRANS ("Q6"), EqualizerExampleAudioProcessor::LowPass,   10000.0f));
 
-    auto paramIn = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (IDs::paramInput, 1),
-                                                              TRANS ("Input"),
-                                                              juce::NormalisableRange<float> (0.0f, 2.0f, 0.01f), 1.0f,
-                                                              juce::String(),
-                                                              juce::AudioProcessorParameter::genericParameter,
-                                                              [](float value, int) {return juce::String (juce::Decibels::gainToDecibels(value), 1) + " dB";},
-                                                              [](juce::String text) {return juce::Decibels::decibelsToGain (text.getFloatValue());});
-
-    auto paramOut = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (IDs::paramOutput, 1),
+    auto paramOutLevel = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (IDs::paramOutLevel, 1),
                                                               TRANS ("Output"),
                                                               juce::NormalisableRange<float> (0.0f, 2.0f, 0.01f), 1.0f,
                                                               juce::String(),
@@ -125,7 +116,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
                                                               [](float value, int) {return juce::String (juce::Decibels::gainToDecibels(value), 1) + " dB";},
                                                               [](juce::String text) {return juce::Decibels::decibelsToGain (text.getFloatValue());});
 
-    auto group = std::make_unique<juce::AudioProcessorParameterGroup> ("global", TRANS ("Globals"), "|", std::move (paramIn), std::move (paramOut));
+    auto group = std::make_unique<juce::AudioProcessorParameterGroup> ("global", TRANS ("Globals"), "|", std::move (paramOutLevel));
     params.push_back (std::move (group));
 
     return { params.begin(), params.end() };
@@ -162,7 +153,7 @@ EqualizerExampleAudioProcessor::EqualizerExampleAudioProcessor()
     :
 #endif
     treeState (*this, nullptr, JucePlugin_Name, createParameterLayout()),
-    gainAttachment (treeState, gain, IDs::paramOutput)
+    gainAttachment (treeState, gain, IDs::paramOutLevel)
 {
     FOLEYS_SET_SOURCE_PATH (__FILE__);
     
@@ -176,9 +167,9 @@ EqualizerExampleAudioProcessor::EqualizerExampleAudioProcessor()
 
     plotSum = magicState.createAndAddObject<foleys::MagicFilterPlot>("plotSum");
 
-    // GUI MAGIC: add analyser plots
-    inputAnalyser   = magicState.createAndAddObject<foleys::MagicAnalyser>("input");
-    outputAnalyser  = magicState.createAndAddObject<foleys::MagicAnalyser>("output");
+    // GUI MAGIC: add analyser plots - controlled by "properties" not "parameters":
+    inputAnalyser   = magicState.createAndAddObject<foleys::MagicAnalyser>("analyser:input");
+    outputAnalyser  = magicState.createAndAddObject<foleys::MagicAnalyser>("analyser:output");
 
     // MAGIC GUI: add a meter at the output
     outputMeter = magicState.createAndAddObject<foleys::MagicLevelSource>("outputMeter");
@@ -216,7 +207,7 @@ void EqualizerExampleAudioProcessor::prepareToPlay (double sampleRate, int sampl
     spec.maximumBlockSize = juce::uint32 (samplesPerBlock);
     spec.numChannels = juce::uint32 (numChannels);
 
-    filter.get<6>().setGainLinear (*treeState.getRawParameterValue (IDs::paramOutput));
+    filter.get<6>().setGainLinear (*treeState.getRawParameterValue (IDs::paramOutLevel));
 
     for (auto* a : attachments)
         a->setSampleRate (sampleRate);
@@ -429,6 +420,8 @@ void EqualizerExampleAudioProcessor::postSetStateInformation()
 {
     // MAGIC GUI: let the magicState conveniently handle save and restore the state.
     //            You don't need to use that, but it also takes care of restoring the last editor size
+
+    // We must manage any new properties ourselves:
     inputAnalysing.attachToValue (magicState.getPropertyAsValue ("analyser:input"));
     outputAnalysing.attachToValue (magicState.getPropertyAsValue ("analyser:output"));
 }

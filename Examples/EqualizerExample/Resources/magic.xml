@@ -107,14 +107,15 @@
   <View id="root" resizable="1" resize-corner="1" min-width="400" min-height="400"
         margin="0" tooltip-text="silver" tooltip-background="FF210444"
         tooltip-outline="FF9581AD">
-    <View id="main" visibility="analyser:foo" radius="0">
+    <View id="main" radius="0">
       <View id="frame" class="plot-view" background-gradient="linear-gradient(0,0% ff5e5f6f,100% ff030303)">
         <View display="flexbox" flex-direction="column" background-color="00000000"
               class="nomargin" flex-justify-content="" flex-align-self="">
           <ToggleButton text="Input" value="analyser:input" flex-align-self="auto" max-height="40"
-                        class="input" tooltip="Show input analyser"/>
+                        class="input" tooltip="Show input analyser" property="analyser:input"/>
           <ToggleButton text="Output" value="analyser:output" flex-align-self="auto"
-                        max-height="40" class="output" tooltip="Show output analyser"/>
+                        max-height="40" class="output" tooltip="Show output analyser"
+                        property="analyser:output"/>
         </View>
         <Plot source="plot1" class="nomargin q1" plot-fill-color="30FF0000"/>
         <Plot source="plot2" class="nomargin q2" plot-fill-color="3000FF00"/>
@@ -224,7 +225,7 @@
           <View padding="3" border="0" background-color="80141521" background-gradient="none"
                 flex-direction="column">
             <View flex-direction="row" background-color="" background-gradient="">
-              <Slider caption="Output" parameter="output" padding="3" background-color="00000000"
+              <Slider caption="Output" parameter="outputLevel" padding="3" background-color="00000000"
                       slider-type="rotary" slider-textbox="textbox-below" lookAndFeel="Skeuomorphic"
                       slider-text="FFFFFFFF" slider-text-outline="ff414151" tooltip="Control main output gain"/>
               <Meter source="outputMeter" flex-grow="0.5" outline-color="00000000"
