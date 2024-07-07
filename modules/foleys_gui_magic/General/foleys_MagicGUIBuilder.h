@@ -36,7 +36,9 @@
 #include "../Layout/foleys_GuiItem.h"
 #include "../Layout/foleys_Stylesheet.h"
 #include "../State/foleys_MagicGUIState.h"
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
 #include "../State/foleys_RadioButtonManager.h"
+#endif
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -194,11 +196,13 @@ public:
         };
     }
 
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     /*!
      * Grant access to the RadioButtonManager
      * @return the radioButtonManager
      */
     RadioButtonManager& getRadioButtonManager();
+#endif
 
     void changeListenerCallback (juce::ChangeBroadcaster* sender) override;
 
@@ -255,7 +259,9 @@ private:
 
     MagicGUIState& magicState;
 
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     RadioButtonManager radioButtonManager;
+#endif
 
     std::unique_ptr<GuiItem> root;
 

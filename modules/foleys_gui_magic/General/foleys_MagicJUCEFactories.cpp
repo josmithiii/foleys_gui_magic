@@ -295,7 +295,11 @@ public:
         if (propertyName.isNotEmpty())
             property.referTo (getMagicState().getPropertyAsValue (propertyName));
 
-        auto groupID = static_cast<int>(getProperty (IDs::buttonRadioGroup));
+      auto groupID = static_cast<int>(getProperty (IDs::buttonRadioGroup));
+
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
+      groupID = 0;
+#endif
         if (groupID > 0)
         {
             button.setRadioGroupId (groupID);
@@ -322,7 +326,9 @@ public:
             button.onClick = triggerToCall;
         }
 
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
         handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
+#endif
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -346,7 +352,9 @@ public:
 
 private:
     juce::TextButton button;
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
+#endif
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
     std::function<void()> triggerToCall;
     juce::Value property;
@@ -386,6 +394,9 @@ public:
 
         auto parameterName = configNode.getProperty (IDs::parameter, juce::String()).toString();
         auto radioValue = getProperty (IDs::buttonRadioValue);
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
+        radioValue = null;
+#endif
         if (parameterName.isNotEmpty() && radioValue.isVoid())
             attachment = getMagicState().createAttachment (parameterName, button);
         else
@@ -404,7 +415,9 @@ public:
             button.setClickingTogglesState (true);
         }
 
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
         handler.setRadioGroupValue(radioValue, getMagicState().getParameter(parameterName));
+#endif
     }
 
     std::vector<SettableProperty> getSettableProperties() const override
@@ -425,7 +438,9 @@ public:
 
 private:
     juce::ToggleButton button;
+#if JOS_ALLOW_RADIO_BUTTONS == 1 // JOS temp workaround
     RadioButtonHandler handler {button, magicBuilder.getRadioButtonManager()};
+#endif
     std::unique_ptr<juce::ButtonParameterAttachment> attachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ToggleButtonItem)

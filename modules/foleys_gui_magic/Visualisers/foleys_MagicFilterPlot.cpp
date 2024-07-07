@@ -62,7 +62,7 @@ MagicFilterPlot::MagicFilterPlot(double minFreqHz, double maxFreqHz)
 
 MagicFilterPlot::MagicFilterPlot() : MagicFilterPlot(20.0, 20000.0) {}
 
-void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::Ptr coefficients, float maxDBToDisplay, juce::String name = "Unnamed Filter")
+void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::Ptr coefficients, float maxDBToDisplay, juce::String name)
 {
     filterName = name;
 
@@ -71,7 +71,7 @@ void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::P
 
     const juce::ScopedWriteLock writeLock (plotLock);
 
-    DBG("MagicFilterPlot:: setIIRCoefficients()");
+    DBG("MagicFilterPlot:: setIIRCoefficients() for filter " << filterName);
 
     maxDB = maxDBToDisplay;
     coefficients->getMagnitudeForFrequencyArray (frequencies.data(),
@@ -81,7 +81,7 @@ void MagicFilterPlot::setIIRCoefficients (juce::dsp::IIR::Coefficients<float>::P
     resetLastDataFlag();
 }
 
-void MagicFilterPlot::setIIRCoefficients (float gain, std::vector<juce::dsp::IIR::Coefficients<float>::Ptr> coefficients, float maxDBToDisplay, juce::String name = "Unnamed Filter")
+void MagicFilterPlot::setIIRCoefficients (float gain, std::vector<juce::dsp::IIR::Coefficients<float>::Ptr> coefficients, float maxDBToDisplay, juce::String name)
 {
     filterName = name;
 

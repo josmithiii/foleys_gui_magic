@@ -12,12 +12,13 @@
 
 namespace IDs
 {
-    static juce::String paramOutLevel  { "outputLevel" };
-    static juce::String paramType    { "type" };
-    static juce::String paramFreq    { "freq" };
-    static juce::String paramGain    { "gain" };
-    static juce::String paramQuality { "quality" };
-    static juce::String paramActive  { "active" };
+  static juce::String paramOutLevel  { "outputLevel" }; // global
+  // Each filter section:
+  static juce::String paramActive  { "active" };
+  static juce::String paramType    { "type" };
+  static juce::String paramFreq    { "freq" };
+  static juce::String paramGainDB    { "gainDB" }; // needed by shelf, peak; ignored by lowpass, highpass
+  static juce::String paramQuality { "quality" };
 }
 
 juce::StringArray filterNames =
@@ -34,13 +35,13 @@ juce::StringArray filterNames =
     NEEDS_TRANS ("Low pass")
 };
 
-static float maxLevel = 24.0f;
+static float maxLevelToDisplayDB = 24.0f;
 
 std::unique_ptr<juce::AudioProcessorParameterGroup> createParametersForFilter (const juce::String& prefix,
                                                                                const juce::String& name,
                                                                                EqualizerExampleAudioProcessor::FilterType type,
                                                                                float frequency,
-                                                                               float gain    = 0.0f,
+                                                                               float gainDB    = 0.0f,
                                                                                float quality = 1.0f,
                                                                                bool  active  = true)
 {
@@ -78,10 +79,10 @@ std::unique_ptr<juce::AudioProcessorParameterGroup> createParametersForFilter (c
                                                                       [](float value, int) { return juce::String (value, 1); },
                                                                       [](const juce::String& text) { return text.getFloatValue(); });
 
-    auto gainParameter = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (prefix + IDs::paramGain, 1),
-                                                                      name + ": " + TRANS ("Gain"),
-                                                                      juce::NormalisableRange<float> {-maxLevel, maxLevel, 0.1f},
-                                                                      gain,
+    auto gainDBParameter = std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (prefix + IDs::paramGainDB, 1),
+                                                                      name + ": " + TRANS ("GainDB"),
+                                                                      juce::NormalisableRange<float> {-maxLevelToDisplayDB, maxLevelToDisplayDB, 0.1f},
+                                                                      gainDB,
                                                                       juce::String(),
                                                                       juce::AudioProcessorParameter::genericParameter,
                                                                       [](float value, int) {return juce::String (value, 1) + " dB";},
@@ -92,7 +93,7 @@ std::unique_ptr<juce::AudioProcessorParameterGroup> createParametersForFilter (c
                                                                        std::move (actvParameter),
                                                                        std::move (freqParameter),
                                                                        std::move (qltyParameter),
-                                                                       std::move (gainParameter));
+                                                                       std::move (gainDBParameter));
 
     return group;
 }
@@ -113,8 +114,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
                                                               juce::NormalisableRange<float> (0.0f, 2.0f, 0.01f), 1.0f,
                                                               juce::String(),
                                                               juce::AudioProcessorParameter::genericParameter,
-                                                              [](float value, int) {return juce::String (juce::Decibels::gainToDecibels(value), 1) + " dB";},
-                                                              [](juce::String text) {return juce::Decibels::decibelsToGain (text.getFloatValue());});
+                                                              [](float value, int) {return juce::String (juce::Decibels::gainDBToDecibels(value), 1) + " dB";},
+                                                              [](juce::String text) {return juce::Decibels::decibelsToGainDB (text.getFloatValue());});
 
     auto group = std::make_unique<juce::AudioProcessorParameterGroup> ("global", TRANS ("Globals"), "|", std::move (paramOutLevel));
     params.push_back (std::move (group));
@@ -130,7 +131,7 @@ auto createPostUpdateLambda (foleys::MagicProcessorState& magicState, const juce
         {
           if (a.isChanged() /* && a.isActive() */)
           {
-            plot->setIIRCoefficients (a.coefficients, maxLevel, a.getTypeName());
+            plot->setIIRCoefficients (a.coefficients, maxLevelToDisplayDB, a.getTypeName());
             plot->setActive (a.isActive());
             a.setChanged(false);
           }
@@ -153,7 +154,7 @@ EqualizerExampleAudioProcessor::EqualizerExampleAudioProcessor()
     :
 #endif
     treeState (*this, nullptr, JucePlugin_Name, createParameterLayout()),
-    gainAttachment (treeState, gain, IDs::paramOutLevel)
+    gainDBAttachment (treeState, gainDB, IDs::paramOutLevel)
 {
     FOLEYS_SET_SOURCE_PATH (__FILE__);
     
@@ -250,7 +251,7 @@ void EqualizerExampleAudioProcessor::processBlock (juce::AudioBuffer<float>& buf
     filter.setBypassed<4>(attachment5.isActive() == false);
     filter.setBypassed<5>(attachment6.isActive() == false);
 
-    filter.get<6>().setGainLinear (gain);
+    filter.get<6>().setGainDecibels (gainDB);
 
     // GUI MAGIC: measure before processing
     if (inputAnalysing.get())
@@ -276,7 +277,7 @@ EqualizerExampleAudioProcessor::FilterAttachment::FilterAttachment (juce::AudioP
     callbackLock        (lock),
     typeAttachment      (state, type,      prefix + IDs::paramType,     [&]{ updateFilter(); }),
     frequencyAttachment (state, frequency, prefix + IDs::paramFreq,     [&]{ updateFilter(); }),
-    gainAttachment      (state, gain,      prefix + IDs::paramGain,     [&]{ updateFilter(); }),
+    gainDBAttachment      (state, gainDB,      prefix + IDs::paramGainDB,     [&]{ updateFilter(); }),
     qualityAttachment   (state, quality,   prefix + IDs::paramQuality,  [&]{ updateFilter(); }),
     activeAttachment    (state, active,    prefix + IDs::paramActive,   [&]
     { if (postFilterUpdate)
@@ -293,23 +294,23 @@ void EqualizerExampleAudioProcessor::FilterAttachment::updateFilter()
   
   changed = true; // it turns out updateFilter() is only called when something changes
 
-  if (type.load() != lastType || gain.load() != lastGain|| frequency.load() != lastFrequency || quality.load() != lastQuality) {
+  if (type.load() != lastType || gainDB.load() != lastGainDB|| frequency.load() != lastFrequency || quality.load() != lastQuality) {
     switch (type) {
     case NoFilter:    coefficients = new juce::dsp::IIR::Coefficients<float> (1, 0, 1, 0); break;
     case LowPass:     coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass (sampleRate, frequency, quality); break;
     case LowPass1st:  coefficients = juce::dsp::IIR::Coefficients<float>::makeFirstOrderLowPass (sampleRate, frequency); break; // no quality
-    case LowShelf:    coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gain.load())); break;
+    case LowShelf:    coefficients = juce::dsp::IIR::Coefficients<float>::makeLowShelf (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gainDB.load())); break;
     case BandPass:    coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sampleRate, frequency, quality); break;
     case Notch:       coefficients = juce::dsp::IIR::Coefficients<float>::makeNotch (sampleRate, frequency, quality); break;
-    case Peak:        coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gain.load())); break;
-    case HighShelf:   coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gain.load())); break;
+    case Peak:        coefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gainDB.load())); break;
+    case HighShelf:   coefficients = juce::dsp::IIR::Coefficients<float>::makeHighShelf (sampleRate, frequency, quality, juce::Decibels::decibelsToGain (gainDB.load())); break;
     case HighPass1st: coefficients = juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass (sampleRate, frequency); break; // no quality
     case HighPass:    coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sampleRate, frequency, quality); break;
     case LastFilterID:
     default: return;
     }
     lastType = type.load();
-    lastGain = gain.load();
+    lastGainDB = gainDB.load();
     lastFrequency = frequency.load();
     lastQuality = quality.load();
     {
@@ -404,8 +405,8 @@ void EqualizerExampleAudioProcessor::handleAsyncUpdate()
     for (auto* a : attachments)
         if (a->isActive())
             coefficients.push_back (a->coefficients);
-
-    plotSum->setIIRCoefficients (gain, coefficients, maxLevel, "OverallFilter");
+    DBG("handleAsyncUpdate");
+    plotSum->setIIRCoefficients (gainDB, coefficients, maxLevelToDisplayDB, "OverallFilter");
 }
 
 //==============================================================================
