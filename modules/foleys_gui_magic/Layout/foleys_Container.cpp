@@ -513,7 +513,43 @@ void Container::updateSelectedTab()
     //    not even 0 - so a container whose property had never been written hid
     //    EVERY page.  var-to-int is 0 for void, i.e. "no selection means tab 0",
     //    which is what the tab bar itself already assumed.
-    const int selected = static_cast<int> (currentTab.getValue());
+    int selected = static_cast<int> (currentTab.getValue());
+
+    // A STALE INDEX MUST NOT HIDE EVERY PAGE (2026-09-06).  The guard below
+    // clamps the tab BAR, and the loop at the bottom does not - so an index
+    // past the last child set every child invisible and the container came up
+    // EMPTY.  That is not hypothetical: `tab-selected` persists an INDEX with
+    // the session, so DELETING a tab strands every session that had one of the
+    // removed pages open.  Four Perform layouts lost their last two tabs on
+    // 2026-09-06 (Settings and All Plots), which is how this was found.
+    //
+    // OUT OF RANGE MEANS TAB 0, not the last tab, for the reason the paragraph
+    // above already gives for a VOID property: "no selection means tab 0" is
+    // this function's existing rule, and a selection that no longer exists is
+    // as good as none.  It is also the better landing: tab 0 of a keyboard
+    // strip is the playing surface and tab 0 of a settings strip is Enables,
+    // where the last tab is whatever happens to sit at the end.  One rule
+    // covers a negative index too.
+    //
+    // SELF-HEALING, once: the clamped value is written back through the same
+    // Value the property lives in, so the session stops being stale the moment
+    // it is noticed.  Writing it here is the idiom selectTabByName() already
+    // uses - the listener fires asynchronously and re-enters this function,
+    // which is idempotent and, by then, in range.
+    if (const int numPages = static_cast<int> (children.size());
+        numPages > 0 && ! juce::isPositiveAndBelow (selected, numPages))
+    {
+        if (! reportedStaleTab)
+        {
+            reportedStaleTab = true;
+            std::cerr << "*** foleys::Container: `tab-selected` persisted index "
+                      << selected << " but this container has " << numPages
+                      << " page(s) -- a saved session naming a tab that no longer"
+                         " exists.  Selecting tab 0 and writing that back.\n";
+        }
+        selected = 0;
+        currentTab = selected;
+    }
 
     if (tabbedButtons != nullptr
         && tabbedButtons->getCurrentTabIndex() != selected

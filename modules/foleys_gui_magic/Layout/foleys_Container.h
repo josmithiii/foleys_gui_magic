@@ -184,6 +184,10 @@ private:
     // END JOS
 
     juce::Value   currentTab { juce::var {0} };
+    // BEGIN JOS 2026-09-06: a stale `tab-selected` index is reported ONCE per
+    // container, not once per repaint - see Container::updateSelectedTab().
+    bool          reportedStaleTab = false;
+    // END JOS
     int           tabbarHeight  = 30;
     int           refreshRateHz = 30;
     LayoutType    layout = LayoutType::FlexBox;
